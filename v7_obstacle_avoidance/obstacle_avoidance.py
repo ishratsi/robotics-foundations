@@ -33,7 +33,29 @@ xs, ys = [], []
 
 
 def update(frame):   # Update the robot's position
-    robot.update()
+    
+    # Adding a wall ((x_min, x_max, y_min, y_max) format)
+    walls = [(-2,2,3,5), (7,9,7,9), (12,15,1,4)] 
+
+    # Computing next position to check for collision
+    next_x = robot.x + robot.v * np.cos(robot.theta) * robot.dt
+    next_y = robot.y + robot.v * np.sin(robot.theta) * robot.dt
+    
+    collision = False
+    
+    # Simple collision detection with walls
+    for wall in walls:
+        x_min, x_max, y_min, y_max = wall
+        if next_x >= x_min and next_x <= x_max and next_y >= y_min and next_y <= y_max:
+            # Collision detected, stop the robot
+            robot.v = 0.0
+            robot.w = 0.0
+            collision = True
+            break
+    
+    # Update the robot's position if no collision
+    if not collision:
+        robot.update()
 
     # store the current position
     xs.append(robot.x)
@@ -71,6 +93,11 @@ def update(frame):   # Update the robot's position
 
     ## step 4: draw the path followed by the robot
     plt.plot(xs, ys, 'b-')
+
+    ## Adding a rectangle to represent the wall at at walls defined above
+    for wall in walls:
+        x_min, x_max, y_min, y_max = wall
+        plt.fill([x_min, x_max, x_max, x_min], [y_min, y_min, y_max, y_max], 'g', alpha=0.5)
 
 # This function takes keyboard inputs and sets the linear and angular velocities to some constant value
 def on_key(event):

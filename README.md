@@ -47,3 +47,9 @@ Each version adds one new feature, starting from a simple moving dot and progres
 
 ### v1: Moving Dot
 ![v1 demo](media/v1_sim.gif)
+
+### v2: Moving Trail
+![v2 demo](media/v2_sim.gif)
+
+### v3: Triangle Robot
+![v1 demo](media/v3_sim.gif)
