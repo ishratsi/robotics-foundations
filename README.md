@@ -25,13 +25,21 @@ Each version adds one new feature, starting from a simple moving dot and progres
 
 - **v7: Obstacles and Collision Detection**  
   Added rectangular walls in the environment. The robot now checks its next position against these obstacles and stops if a collision is detected. Supports multiple walls for building simple mazes. 
+
+- **v8: Manual vs Autopilot Modes**  
+  At startup, the user can choose between manual control (keyboard) or autopilot mode (circular path).  
+  Manual mode is unchanged; autopilot uses predefined velocities to move in a circle.
   
 
 ## Next Steps  
-- v8: Autopilot paths (square, circle, figure-8)  
-- v9: Simulated sensors (rangefinder, lidar)  
+- v9: Simulated sensors (rangefinder, lidar)
 - v10: Path planning (A*, obstacle avoidance)
 - v11: Refactoring the update(frame) for multi-robot modularity
+- v12: Grid-based collision acceleration (spatial hashing)
+- v13: Reactive avoidance using sensors (Bug algorithms)
+- v14: Waypoint following (user-defined paths) + replanning on blockages
+- v15: Profiling & benchmarks (time/cProfile) with README charts
+- v16: RL/ML baseline (learned collision avoidance in sim)
 
 ---
 

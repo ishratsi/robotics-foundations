@@ -4,6 +4,84 @@ import matplotlib.animation as animation
 
 # This code simulates a simple robot moving in a 2D plane.
 
+#Ask user if they want manual control or autopilot and store in variable
+mode = input("Select mode: 1. Manual Control or 2. Autopilot: ")
+
+# Store the mode in a variable control_mode and default to autopilot if invalid input
+try:
+    if mode == "1":
+        control_mode = "manual"
+    elif mode == "2":
+        control_mode = "auto"
+        try:
+            path_choice = input("Choose autopilot path: (1) Circle / (2) Square / (3) Figure-8: ")
+            if path_choice == "1":
+                autopilot_mode = "circle"
+            elif path_choice == "2":
+                autopilot_mode = "square"
+            elif path_choice == "3":
+                autopilot_mode = "figure8"
+            else:
+                print("Invalid choice, defaulting to circle.")
+                autopilot_mode = "circle"
+        except Exception as e:
+            print(f"Error in autopilot path selection: {e}. Defaulting to circle.")
+            autopilot_mode = "circle"
+    else:
+        raise ValueError("Invalid selection. Input should be 1 for manual or 2 for autopilot.")
+except Exception as e:
+    print(f"{e} Defaulting to auto control and circle path.")
+    control_mode = "auto"
+    autopilot_mode = "circle"
+
+# This function takes control_mode and frame number as input and sets the robot's velocities accordingly
+def control(control_mode,frame):
+    if control_mode == "manual":
+        # Manual control logic (e.g., keyboard input)
+        pass
+    elif control_mode == "auto":
+        # Autopilot logic (e.g., predefined path)
+        autopilot_control(robot, frame)
+
+# Autopilot logic: circular path, square path, figure-8 path
+def autopilot_control(robot, frame):
+    if autopilot_mode == "circle":
+        robot.v = 3.0  # linear velocity
+        robot.w = 0.2  # angular velocity
+    elif autopilot_mode == "square":
+        # Move forward for N frames, then turn 90°
+        cycle = frame % 200  # adjust depending on how long you want each side
+        if cycle < 150:      # go straight
+            robot.v = 3.0
+            robot.w = 0.0
+        else:                # turn in place
+            robot.v = 0.0
+            robot.w = np.pi/2   # ~90° turn
+    elif autopilot_mode == "figure8":
+        # Figure-8 pattern using parametric equations
+        t = frame * 0.05  # time parameter
+        scale = 3.0
+        
+        # Parametric equations for figure-8 (lemniscate)
+        target_x = scale * np.cos(t) / (1 + np.sin(t)**2)
+        target_y = scale * np.sin(t) * np.cos(t) / (1 + np.sin(t)**2)
+        
+        # Calculate desired heading towards next point
+        dt_small = 0.01
+        next_x = scale * np.cos(t + dt_small) / (1 + np.sin(t + dt_small)**2)
+        next_y = scale * np.sin(t + dt_small) * np.cos(t + dt_small) / (1 + np.sin(t + dt_small)**2)
+        
+        desired_theta = np.arctan2(next_y - target_y, next_x - target_x)
+        
+        # Control robot to follow the path
+        robot.v = 2.0
+        angle_diff = desired_theta - robot.theta
+        # Normalize angle difference to [-pi, pi]
+        angle_diff = np.arctan2(np.sin(angle_diff), np.cos(angle_diff))
+        robot.w = 2.0 * angle_diff
+    else:
+        print("Invalid autopilot mode, defaulting to circle.")
+
 # Robot Class defines the robot in the 2D space
 class Robot:
     def __init__(self, x=0, y=0, theta=0, v=0, w=0, a_v=0, a_w=0, dt=0.1):
@@ -31,11 +109,13 @@ robot = Robot(a_v = 0.1, a_w = 0.1)
 # Lists to store the robot's path
 xs, ys = [], [] 
 
+# Update the robot's position
+def update(frame):
+    # Set velocities based on control mode
+    control(control_mode, frame)  
 
-def update(frame):   # Update the robot's position
-    
     # Adding a wall ((x_min, x_max, y_min, y_max) format)
-    walls = [(-2,2,3,5), (7,9,7,9), (12,15,1,4)] 
+    walls = []  # no wall for now
 
     # Computing next position to check for collision
     next_x = robot.x + robot.v * np.cos(robot.theta) * robot.dt
@@ -104,6 +184,8 @@ def update(frame):   # Update the robot's position
 
 # This function takes keyboard inputs and sets the linear and angular velocities to some constant value
 def on_key(event):
+    if control_mode != "manual":
+        return  # Ignore key presses if not in manual mode
     # Move forward
     if event.key == 'up':
         robot.v += robot.a_v  # Increase linear velocity
