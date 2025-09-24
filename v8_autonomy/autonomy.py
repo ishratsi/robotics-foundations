@@ -46,39 +46,51 @@ def control(control_mode,frame):
 # Autopilot logic: circular path, square path, figure-8 path
 def autopilot_control(robot, frame):
     if autopilot_mode == "circle":
-        robot.v = 3.0  # linear velocity
+        robot.v = 1.0  # linear velocity
         robot.w = 0.2  # angular velocity
     elif autopilot_mode == "square":
         # Move forward for N frames, then turn 90°
-        cycle = frame % 200  # adjust depending on how long you want each side
+        cycle = frame % 160  # adjust depending on how long you want each side
         if cycle < 150:      # go straight
-            robot.v = 3.0
+            robot.v = 1.0
             robot.w = 0.0
         else:                # turn in place
             robot.v = 0.0
             robot.w = np.pi/2   # ~90° turn
+
     elif autopilot_mode == "figure8":
-        # Figure-8 pattern using parametric equations
-        t = frame * 0.05  # time parameter
-        scale = 3.0
-        
-        # Parametric equations for figure-8 (lemniscate)
-        target_x = scale * np.cos(t) / (1 + np.sin(t)**2)
-        target_y = scale * np.sin(t) * np.cos(t) / (1 + np.sin(t)**2)
-        
-        # Calculate desired heading towards next point
-        dt_small = 0.01
-        next_x = scale * np.cos(t + dt_small) / (1 + np.sin(t + dt_small)**2)
-        next_y = scale * np.sin(t + dt_small) * np.cos(t + dt_small) / (1 + np.sin(t + dt_small)**2)
-        
-        desired_theta = np.arctan2(next_y - target_y, next_x - target_x)
-        
-        # Control robot to follow the path
-        robot.v = 2.0
-        angle_diff = desired_theta - robot.theta
-        # Normalize angle difference to [-pi, pi]
-        angle_diff = np.arctan2(np.sin(angle_diff), np.cos(angle_diff))
-        robot.w = 2.0 * angle_diff
+        # params you can tweak
+        speed = 1.0           # linear speed (m/s)
+        omega = 0.3           # turn rate during arcs (rad/s)
+        robot.v = speed       # default each frame; we’ll override w per phase
+
+        # derived geometry
+        # radius R = v / |omega|
+        # straight distance between arc centers ≈ 2R → duration = D / v = (2R)/v = 2/(|omega|)
+        turn_frames    = int(np.pi / (abs(omega) * robot.dt))   # half circle (π radians)
+        straight_frames = int(2.0 / (abs(omega) * robot.dt))    # cross the center (distance ~ 2R)
+
+        # one full "8" = straight → left half-circle → straight → right half-circle
+        period = 2 * straight_frames + 2 * turn_frames
+        phase  = frame % period
+
+        if phase < straight_frames:
+            # go straight through the center to shift to the other lobe
+            robot.w = 0.0
+        elif phase < straight_frames + turn_frames:
+            # left half-circle
+            robot.w = +omega
+        elif phase < straight_frames + turn_frames + straight_frames:
+            # straight back through the center
+            robot.w = 0.0
+        else:
+            # right half-circle
+            robot.w = -omega
+
+    
+    # elif autopilot_mode == "figure8":
+    #     robot.v = 1.0  # linear velocity
+    #     robot.w = 0.3 * np.sin(frame * 0.01)  # oscillating angular velocity for figure-8
     else:
         print("Invalid autopilot mode, defaulting to circle.")
 
